@@ -42,11 +42,37 @@ const PersonForm = ({addContact, newName, handleNameChange, newNumber, handleNum
   )
 }
 
+const SystemMessage = ({ message }) => {
+  if (message === null) {
+    return null
+  }
+
+  return (
+    <div className="message">
+      {message}
+    </div>
+  )
+}
+
+const ErrorMessage = ({ message }) => {
+  if (message === null) {
+    return null
+  }
+
+  return (
+    <div className="error">
+      {message}
+    </div>
+  )
+}
+
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [condition, setCondition] = useState('')
+  const [systemMessage, setSystemMessage] = useState(null)
+  const [errorMessage, setErrorMessage] = useState(null)
 
   useEffect(() => {
     personService
@@ -64,6 +90,7 @@ const App = () => {
       personService
         .deletePersonFromServer(id)
         setPersons(persons.filter(person => person.id !== id))
+      raiseMessage(`Deleted ${name}`)
     } else {
       console.log(`${name} will not be deleted`)
     }
@@ -97,6 +124,24 @@ const App = () => {
     }
   }
 
+  const raiseMessage = (message) => {
+    setSystemMessage(
+      message
+    )
+    setTimeout(() => {
+      setSystemMessage(null)
+    }, 5000)
+  }
+
+  const raiseError = (message) => {
+    setErrorMessage(
+      message
+    )
+    setTimeout(() => {
+      setErrorMessage(null)
+    }, 5000)
+  }
+
   const addContact = (event) => {
     // prevent redirect
     event.preventDefault()
@@ -114,6 +159,7 @@ const App = () => {
           // render the new contact with help of state
           setPersons(persons.concat(returnedPerson))
         })
+        raiseMessage(`Added ${newName}`)
     }
     else if (confirmChange(newName)){
       // change the person on server
@@ -126,6 +172,10 @@ const App = () => {
           // returnedPerson is the person that was changed
           const remainingPersons = persons.filter(person => person.id != getPersonId(newName))
           setPersons(remainingPersons.concat(returnedPerson).sort((a, b) => a.name.localeCompare(b.name)))
+          raiseMessage(`Updated ${newName}`)
+        })
+        .catch(error => {
+          raiseError(`Information of ${newName} has already been removed from server.`)
         })
     }
     // else: we just clear the inputs like we do anyway
@@ -160,6 +210,8 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <ErrorMessage message={errorMessage}/>
+      <SystemMessage message={systemMessage}/>
       <Filter condition={condition} handleConditionChange={handleConditionChange}/>
       <PersonForm addContact={addContact} newName={newName} handleNameChange={handleNameChange} newNumber={newNumber} handleNumberChange={handleNumberChange}/>
       <h2>Numbers</h2>
